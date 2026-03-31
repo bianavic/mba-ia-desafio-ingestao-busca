@@ -45,6 +45,11 @@ def ingest_pdf():
         collection_name=os.getenv("PGVECTOR_COLLECTION_NAME", "pdf_documents"),
     )
 
+    header = "Nome da empresa | Faturamento | Ano de fundação"
+    for chunk in chunks:
+        if header.split("|")[0].strip() not in chunk.page_content[:50]:
+            chunk.page_content = f"{header}\n{chunk.page_content}"
+
     vectorstore.add_documents(chunks)
     print(f"Ingestão concluída. {len(chunks)} chunks inseridos.")
 
