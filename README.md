@@ -126,100 +126,93 @@ Faça um fork do repositório para utilizar a estrutura abaixo: [Clique aqui](ht
 
 ## Configuração do Ambiente
 
-### Clonar
+### Pré-requisitos
+- Python 3.10+
+- Docker & Docker Compose
+- [Ollama](https://ollama.ai) instalado localmente
+
+### 1. Clonar o repositório
 ```bash
-git clone <seu-repositorio>
-cd <projeto>
+git clone https://github.com/bianavic/mba-ia-desafio-ingestao-busca.git
+cd mba-ia-desafio-ingestao-busca
 ```
 
-### VirtualEnv para Python3
-1. **Criar e ativar um ambiente virtual antes de instalar dependências: (`.venv`):**
-    ```bash
-    python3 -m venv .venv
-    source .venv/bin/activate
-    ```
+### 2. Criar ambiente virtual e instalar dependências
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
 
-2. **Instalar as dependências:**
- ```bash
-   pip install -r requirements.txt
-   ```
+### 3. Configurar variáveis de ambiente
+Duplique `.env.example` para `.env` e preencha:
+```env
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=llama3:latest
+OLLAMA_EMBEDDING_MODEL=mxbai-embed-large
+LLM_TEMPERATURE=0.0
+DATABASE_URL=postgresql://postgres:postgres@localhost:5433/rag
+PGVECTOR_COLLECTION_NAME=pdf_documents
+PDF_PATH=document.pdf
+CHUNK_SIZE=1000
+CHUNK_OVERLAP=150
+RETRIEVAL_TOP_K=10
+```
 
-3. **Configurar as variáveis de ambiente:**
-    - Duplique o arquivo `.env.example` e renomeie para `.env`
-    - Abra o arquivo `.env` e substitua os valores pelas suas chaves de API reais obtidas conforme instruções abaixo
+### 4. Subir o banco de dados
+```bash
+docker compose up -d
+```
+Aguarde o PostgreSQL + pgVector ficar healthy (extensão `vector` é criada automaticamente).
 
-    ```
-    # Banco de dados
-    DATABASE_URL=postgresql://postgres:postgres@localhost:5433/testedb
+### 5. Baixar modelos do Ollama
+```bash
+ollama pull llama3:latest
+ollama pull mxbai-embed-large
+```
 
-    # PDF
-    PDF_PATH=document.pdf
-
-    # Configurações do vetor
-    PG_VECTOR_COLLECTION_NAME=pdf_documents
-    LOCAL_EMBED_MODEL=sentence-transformers/all-MiniLM-L6-v2
-    K=10
-    ```
+---
 
 ## Execução do projeto
-Seguir a ordem de execução abaixo:
 
-### 1. Executar a ingestão
-
+### 1. Ingestão do PDF
 ```bash
-  python3 src/ingest.py
+python3 src/ingest.py
 ```
+Saída esperada: `Ingestão concluída. X chunks inseridos.`
 
-### 2. Executar o chat determinístico
-
+### 2. Chat interativo
 ```bash
-  python3 src/chat.py
+python3 src/chat.py
 ```
-
----
-
-### Entregável
-1. Repositório público no GitHub contendo todo o código-fonte e README com instruções claras de execução do projeto.
-
----
+Digite sua pergunta e receba a resposta. Para sair: `exit`, `sair`, `quit` ou `Ctrl+C`.
 
 ---
 
 ## Testes
-Executar todos os testes
+
 ```bash
-python3 -m pytest -q
+python3 -m pytest -q                                  # Todos os testes
+python3 -m pytest tests/test_integrated_chat.py -q    # Testes integrados
+python3 -m pytest -k "test_name" -q                   # Teste individual
 ```
+
+> Os testes integrados requerem PostgreSQL e Ollama rodando localmente com dados já ingeridos.
+
 #### O que os testes integrados verificam
-Os testes integrados localizados em tests/test_integrated_chat.py validam:
-1. Extração determinística de ano
+1. Extração determinística de ano de fundação
 2. Extração determinística de faturamento
 3. Listagem correta de empresas por ano
 4. Normalização robusta de acentos
-5. Busca híbrida literal + vetorial funcionando com DB real
+5. Busca híbrida literal + vetorial com DB real
 6. Rejeição determinística de perguntas fora do contexto
 
-Todas essas perguntas fora do contexto retornam sempre:
+Perguntas fora do contexto retornam sempre:
 ```
 Não tenho informações necessárias para responder sua pergunta.
 ```
 
 ---
 
-### Tecnologias obrigatórias
-- Linguagem: Python
-- Framework: LangChain
-- Banco de dados: PostgreSQL + pgVector
-- Execução do banco de dados: Docker & Docker Compose (docker-compose fornecido no repositório de exemplo)
-
----
-
-### Pacotes recomendados
-- Split: from langchain_text_splitters import RecursiveCharacterTextSplitter
-- Embeddings (OpenAI): from langchain_openai import OpenAIEmbeddings
-- Embeddings (Gemini): from langchain_google_genai import GoogleGenerativeAIEmbeddings
-- PDF: from langchain_community.document_loaders import PyPDFLoader
-- Ingestão: from langchain_postgres import PGVector
-- Busca: similarity_search_with_score(query, k=10)
-
----
+### Entregável
+Repositório público no GitHub contendo todo o código-fonte e README com instruções claras de execução do projeto.
